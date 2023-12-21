@@ -2,32 +2,31 @@
 if ($argc < 2 ){
     exit("Veuillez entrer un fichier\n");
 }
+
 //Liste de paramètres de la fonction geropt
 $shortopts  = "";
-$shortopts .= "r:";
 $shortopts .= "i:";
 $shortopts .= "s:";
 $shortopts .= "p:";
-$shortopts .= "o:";
-$shortopts .= "c:";
+$shortopts .= "r";
 
-$longopts  = array(
-    "recursive:",     
+$longopts  = array(     
     "output-image:",   
-    "output-style:", 
-    "padding:", 
-    "override-size:", 
-    "columns_number:",            
+    "output-style:",    
+    "padding:",  
+    "recursive",       
 );
 $options = getopt($shortopts, $longopts);
 
 //Récupère tout les images png sans recursive
 function getAllImages($folder){
     $imageFiles = [];
-    $pngFiles = glob($folder . '*.png');
-    foreach ($pngFiles as $pngFile) {
-        if (is_file($pngFile)) {
-            $imageFiles[] = $pngFile;
+    if(is_dir($folder)){
+        $pngFiles = glob($folder . '*.png');
+        foreach ($pngFiles as $pngFile) {
+            if (is_file($pngFile)) {
+                $imageFiles[] = $pngFile;
+            }
         }
     }
     return($imageFiles);
@@ -50,25 +49,18 @@ function getAllImagesRecursive ($folder, &$imageFiles, ){
 }
 $imageFiles = [];
 
-//option Recursive ou non
-if(isset($options["r"]) || isset($options["recursive"]) ){
-    $imageFiles = getAllImagesRecursive($argv[2], $imageFiles);
-}else {
-    $imageFiles = getAllImages($argv[1]);
-}
-
 //Concatener les images
 function concatenateImages($imageFiles, $output) {
     global $options;
     if (empty($imageFiles)) {
-        die('Pas d\'image à concaténer.');
+        die('Pas d\'image à concaténer.\n');
     }
     $images = [];
     foreach ($imageFiles as $imageFile) {
         $img = imagecreatefrompng($imageFile);
         $images[] = $img;
     }
-    
+
     $totalWidth = 0;
     $totalHeight = 0;
     
@@ -95,7 +87,6 @@ function concatenateImages($imageFiles, $output) {
     foreach ($images as $img) {
         imagedestroy($img);
     }
-
     imagedestroy($sprite);
 
 }
@@ -105,9 +96,9 @@ function cssGenerate ($sprite, $options){
     //option pour le Css
     $nameCSS = "";
     if(array_key_exists("s", $options)){
-        $nameCSS .= $options["s"];
+        $nameCSS .= $options["s"] . ".css";
     }elseif(array_key_exists("output-style", $options)) {
-        $nameCSS .= $options["output-style"];
+        $nameCSS .= $options["output-style"] . ".css";
     }else{
         $nameCSS .= "style.css";
     }
@@ -117,17 +108,8 @@ function cssGenerate ($sprite, $options){
     $currentX = 0;
     static $i = 1; 
     foreach($sprite as $spriteData_){
-        // if(array_key_exists("p", $options) && is_numeric($options["p"])){
-        //     $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)+$options["p"]."px;\n    height: ".imagesy($spriteData_)."px;\n}\n";
-        //     $currentX += imagesx($spriteData_)+$options["p"];
-        //     echo $currentX;
-        // }elseif(array_key_exists("padding", $options) && is_numeric($options["padding"])) {
-        //     $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n    padding: ".$options["padding"]."px;\n}\n";
-        //     $currentX += imagesx($spriteData_) + $options["padding"];
-        // }else{
-            $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n}\n";
-            $currentX += imagesx($spriteData_);
-        // }
+        $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n}\n";
+        $currentX += imagesx($spriteData_); 
     }
     fwrite($css, $content);
     fclose($css);
@@ -135,15 +117,24 @@ function cssGenerate ($sprite, $options){
 
 //Creation de la tarball sprite
 $namePNG = "";
-if(array_key_exists("i", $options) && str_ends_with($options["i"], ".png")){
-    $namePNG .= $options["i"];
-}elseif(array_key_exists("output-image", $options) && str_ends_with($options["output-image"], ".png")) {
-    $namePNG .= $options["output-image"];
+if(array_key_exists("i", $options)){
+    $namePNG .= $options["i"] . ".png";
+}elseif(array_key_exists("output-image", $options)) {
+    $namePNG .= $options["output-image"] . ".png";
 }else{
     $namePNG .= "sprite.png";
 }
 $tarball = fopen("$namePNG", "w");
-// fclose($tarball);
 
+// recursive ou non 
+$recursive = isset($options["r"]) || isset($options["recursive"]);
+for($i = 1; $i < $argc; $i++){
+    $path = $argv[$i];
+    if (!$recursive){
+        $imageFiles = (getAllImages($path));
+    }else{
+        $imageFiles = (getAllImagesRecursive($path, $imageFiles));
+    }
+}
 concatenateImages($imageFiles, $tarball);
 fclose($tarball);
