@@ -63,22 +63,33 @@ function concatenateImages($imageFiles, $output) {
 
     $totalWidth = 0;
     $totalHeight = 0;
-    
     foreach ($images as $img) {
-        $totalWidth += imagesx($img);
-        $totalHeight = max($totalHeight, imagesy($img));
+        $totalWidth += isset($options["p"]) && is_numeric($options["p"]) ? imagesx($img)+$options["p"] : imagesx($img);
+        // $totalWidth += imagesx($img);
+        // $totalHeight = max($totalHeight, imagesy($img));     
+        $totalHeight = isset($options["p"]) && is_numeric($options["p"]) ? max($totalHeight, imagesy($img)+$options["p"]*2) : max($totalHeight, imagesy($img));    
     }
 
-    $sprite = imagecreatetruecolor($totalWidth, $totalHeight);
+    // $sprite = imagecreatetruecolor($totalWidth, $totalHeight);
+    $sprite = isset($options["p"]) && is_numeric($options["p"]) ? imagecreatetruecolor($totalWidth+$options["p"], $totalHeight) : imagecreatetruecolor($totalWidth, $totalHeight);
     $background = imagecolorallocatealpha($sprite, 255, 255, 255, 127);
     imagefill($sprite, 0, 0, $background);
     imagealphablending($img, false);
     imagesavealpha($sprite, true);
 
-    $currentX = 0;
+    $currentX = isset($options["p"]) && is_numeric($options["p"]) ? $options["p"] : 0 ;
+    $currentY = isset($options["p"]) && is_numeric($options["p"]) ? $options["p"] : 0;
     foreach ($images as $img) {
-        imagecopy($sprite, $img, $currentX, 0, 0, 0, imagesx($img), imagesy($img));
-        $currentX += imagesx($img);
+        if(array_key_exists("p", $options) && is_numeric($options["p"])){
+            imagecopy($sprite, $img, $currentX, $currentY, 0, 0, imagesx($img), imagesy($img));
+            $currentX += imagesx($img)+$options["p"];
+        }else if (array_key_exists("padding", $options) && is_numeric($options["padding"])){
+            imagecopy($sprite, $img, $currentX, $currentY, 0, 0, imagesx($img), imagesy($img));
+            $currentX += imagesx($img)+$options["padding"];
+        }else{
+            imagecopy($sprite, $img, $currentX, 0, 0, 0, imagesx($img), imagesy($img));
+            $currentX += imagesx($img);  
+        }
     }
     cssGenerate ($images, $options);
 
@@ -108,8 +119,17 @@ function cssGenerate ($sprite, $options){
     $currentX = 0;
     static $i = 1; 
     foreach($sprite as $spriteData_){
-        $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n}\n";
-        $currentX += imagesx($spriteData_); 
+        if(array_key_exists("p", $options) && is_numeric($options["p"])){
+            $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n    padding: ".$options["p"]."px;\n}\n";
+            $currentX += imagesx($spriteData_); 
+        }else if (array_key_exists("padding", $options) && is_numeric($options["padding"])){
+            $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n    padding: ".$options["padding"]."px;\n}\n";
+            $currentX += imagesx($spriteData_); 
+        }else {
+            $content.= ".sprite_".$i++." {\n    background-position: -$currentX"."px 0;\n    width: ".imagesx($spriteData_)."px;\n    height: ".imagesy($spriteData_)."px;\n}\n";
+            $currentX += imagesx($spriteData_);            
+        }
+ 
     }
     fwrite($css, $content);
     fclose($css);
