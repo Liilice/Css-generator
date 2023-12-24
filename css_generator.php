@@ -64,21 +64,51 @@ function concatenateImages($imageFiles, $output) {
     $totalWidth = 0;
     $totalHeight = 0;
     foreach ($images as $img) {
-        $totalWidth += isset($options["p"]) && is_numeric($options["p"]) ? imagesx($img)+$options["p"] : imagesx($img);
-        // $totalWidth += imagesx($img);
-        // $totalHeight = max($totalHeight, imagesy($img));     
-        $totalHeight = isset($options["p"]) && is_numeric($options["p"]) ? max($totalHeight, imagesy($img)+$options["p"]*2) : max($totalHeight, imagesy($img));    
+        // $totalWidth += isset($options["p"]) && is_numeric($options["p"]) ? imagesx($img)+$options["p"] : imagesx($img);
+        if(array_key_exists("p", $options)  && is_numeric($options["p"])){
+            $totalWidth += imagesx($img)+$options["p"];
+            $totalHeight = max($totalHeight, imagesy($img)+$options["p"]*2);    
+        }else if (array_key_exists("padding", $options)  && is_numeric($options["padding"])){
+            $totalWidth += imagesx($img)+$options["padding"];
+            $totalHeight = max($totalHeight, imagesy($img)+$options["padding"]*2);  
+        }else {
+            $totalWidth += imagesx($img);
+            $totalHeight = max($totalHeight, imagesy($img));   
+        } 
+        // $totalHeight = isset($options["p"]) && is_numeric($options["p"]) ? max($totalHeight, imagesy($img)+$options["p"]*2) : max($totalHeight, imagesy($img));    
     }
 
-    // $sprite = imagecreatetruecolor($totalWidth, $totalHeight);
-    $sprite = isset($options["p"]) && is_numeric($options["p"]) ? imagecreatetruecolor($totalWidth+$options["p"], $totalHeight) : imagecreatetruecolor($totalWidth, $totalHeight);
+    // $sprite = isset($options["p"]) && is_numeric($options["p"]) ? imagecreatetruecolor($totalWidth+$options["p"], $totalHeight) : imagecreatetruecolor($totalWidth, $totalHeight);
+    if(array_key_exists("p", $options)  && is_numeric($options["p"])){
+        $sprite = imagecreatetruecolor($totalWidth+$options["p"], $totalHeight);    
+    }else if (array_key_exists("padding", $options)  && is_numeric($options["padding"])){
+        $sprite = imagecreatetruecolor($totalWidth+$options["padding"], $totalHeight);    
+    }else {
+        $sprite = imagecreatetruecolor($totalWidth, $totalHeight);
+    } 
     $background = imagecolorallocatealpha($sprite, 255, 255, 255, 127);
     imagefill($sprite, 0, 0, $background);
     imagealphablending($img, false);
     imagesavealpha($sprite, true);
 
-    $currentX = isset($options["p"]) && is_numeric($options["p"]) ? $options["p"] : 0 ;
-    $currentY = isset($options["p"]) && is_numeric($options["p"]) ? $options["p"] : 0;
+    // $currentX = isset($options["p"]) && is_numeric($options["p"]) ? $options["p"] : 0 ;
+    if(array_key_exists("p", $options)  && is_numeric($options["p"])){
+        $currentX = $options["p"] ;
+    }else if (array_key_exists("padding", $options)  && is_numeric($options["padding"])){
+        $currentX = $options["padding"] ;
+    }else {
+        $currentX = 0;
+    } 
+
+    // $currentY = isset($options["p"]) && is_numeric($options["p"]) ? $options["p"] : 0;
+    if(array_key_exists("p", $options)  && is_numeric($options["p"])){
+        $currentY = $options["p"] ;
+    }else if (array_key_exists("padding", $options) && is_numeric($options["padding"])){
+        $currentY = $options["padding"] ;
+    }else {
+        $currentY = 0;
+    } 
+
     foreach ($images as $img) {
         if(array_key_exists("p", $options) && is_numeric($options["p"])){
             imagecopy($sprite, $img, $currentX, $currentY, 0, 0, imagesx($img), imagesy($img));
