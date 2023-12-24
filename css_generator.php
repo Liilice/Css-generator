@@ -8,12 +8,14 @@ $shortopts  = "";
 $shortopts .= "i:";
 $shortopts .= "s:";
 $shortopts .= "p:";
+$shortopts .= "o:";
 $shortopts .= "r";
 
 $longopts  = array(     
     "output-image:",   
     "output-style:",    
-    "padding:",  
+    "padding:",
+    "override-size:",
     "recursive",       
 );
 $options = getopt($shortopts, $longopts);
