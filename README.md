@@ -13,7 +13,7 @@ Clonez le répertoire du projet et installez les dépendances nécessaires.
 
 ### 1. Cloner le Répertoire du Projet
 ```bash
-git clone https://github.com/votre-repo/css_generator.git
+git clone git@github.com:Liilice/Css-generator.git
 cd css_generator
 ```
 
